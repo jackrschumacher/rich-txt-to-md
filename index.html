@@ -9,9 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-
     <style>
         :root {
             /* LIGHT THEME */
@@ -228,7 +225,7 @@
             top: 20px;
             right: 20px;
             z-index: 10;
-            gap: 6px; /* Space between icon and text */
+            gap: 6px;
         }
         .issue-link svg {
             width: 16px;
@@ -277,7 +274,6 @@
             overflow-y: auto;
         }
         
-        /* PREVIEW STYLING */
         #previewContent {
             text-align: left;
             margin-bottom: 20px;
@@ -295,8 +291,8 @@
             border-bottom: 1px solid var(--border-color); padding-bottom: .3em; color: var(--text-color);
         }
         #previewContent code { background: var(--preview-code-bg); padding: 0.2em 0.4em; border-radius: 6px; font-family: monospace; }
-        #previewContent pre { background: var(--preview-code-bg); padding: 16px; overflow: auto; border-radius: 6px; margin-bottom: 16px; }
-        #previewContent blockquote { border-left: 0.25em solid var(--border-color); padding: 0 1em; color: var(--stats-text); margin-bottom: 16px; }
+        #previewContent pre { background: var(--preview-code-bg); padding: 16px; overflow: auto; border-radius: 6px; }
+        #previewContent blockquote { border-left: 0.25em solid var(--border-color); padding: 0 1em; color: var(--stats-text); }
         #previewContent img { max-width: 100%; }
 
         .modal-box h3 { margin-top: 0; color: var(--text-color); }
@@ -321,7 +317,6 @@
         .stat-card .num { font-size: 1.1rem; font-weight: bold; color: var(--accent-color); display: block;}
         .stat-card .label { font-size: 0.7rem; color: var(--stats-text); margin-top: 2px; }
         
-        /* Record Card Styling */
         .record-split { display: flex; width: 100%; justify-content: space-around; align-items: center; }
         .record-half { display: flex; flex-direction: column; align-items: center; }
         .record-num { font-size: 1.1rem; font-weight: bold; color: var(--accent-color); }
@@ -625,6 +620,9 @@
             recWordsDate.innerText = `(${maxWDate})`;
             recCharsNum.innerText = maxC;
             recCharsDate.innerText = `(${maxCDate})`;
+        }, (error) => {
+             console.error("Firebase Read Error:", error);
+             globalBadge.innerText = "Stats: Offline";
         });
 
         // 2. WRITE LOGIC
@@ -662,8 +660,9 @@
                 };
             };
 
-            runTransaction(child(statsRef, 'total'), updateFunc);
-            runTransaction(child(statsRef, `monthly/${monthKey}`), (current) => {
+            // Using Promise.all to catch errors on either write
+            const p1 = runTransaction(child(statsRef, 'total'), updateFunc);
+            const p2 = runTransaction(child(statsRef, `monthly/${monthKey}`), (current) => {
                 if (!current) return { words: w, chars: c, read_time: t, generations: 1 };
                 return {
                     words: (current.words || 0) + w,
@@ -671,9 +670,16 @@
                     read_time: (current.read_time || 0) + t,
                     generations: (current.generations || 0) + 1
                 };
-            }).then(() => {
+            });
+
+            Promise.all([p1, p2]).then(() => {
                 globalBadge.style.backgroundColor = "#d1fae5";
                 setTimeout(() => globalBadge.style.backgroundColor = "", 300);
+            }).catch((error) => {
+                console.error("Firebase Write Error:", error);
+                if (window.showAlert) {
+                    window.showAlert("Stat Save Failed", "Could not update community stats. Limit reached or offline.");
+                }
             });
         }
 
@@ -718,6 +724,7 @@
                         const gensData = [];
 
                         let tableHtml = '';
+                        // Loop reversed for Table (Newest first)
                         [...sortedMonths].reverse().forEach(key => {
                             const m = monthlyData[key];
                             const rTime = m.read_time || 0;
@@ -872,6 +879,16 @@
         let modalResolve = null;
         let alertResolve = null;
 
+        // EXPOSE ALERT GLOBALLY
+        window.showAlert = function(title, message) {
+            return new Promise((resolve) => {
+                alertTitle.innerText = title;
+                alertMessage.innerText = message;
+                alertModal.style.display = 'flex';
+                alertResolve = resolve;
+            });
+        };
+
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             if (theme === 'dark') {
@@ -978,15 +995,6 @@
             }
         };
 
-        function showAlert(title, message) {
-            return new Promise((resolve) => {
-                alertTitle.innerText = title;
-                alertMessage.innerText = message;
-                alertModal.style.display = 'flex';
-                alertResolve = resolve;
-            });
-        }
-
         function triggerDownload(filename, content, mimeType) {
             processAction(content); 
             const blob = new Blob([content], { type: mimeType });
@@ -1007,7 +1015,7 @@
                 convert();
             
             } else if (mode === "batch") {
-                await showAlert("Download Permission", "Note: You may need to grant permission for your browser to download multiple files.");
+                await window.showAlert("Download Permission", "Note: You may need to grant permission for your browser to download multiple files.");
                 for (const file of files) {
                     const content = await readFileAsText(file);
                     inputDiv.innerHTML = content;
@@ -1016,7 +1024,7 @@
                     let filename = file.name.replace(/\.[^/.]+$/, "") + ".md";
                     triggerDownload(filename, output.value, 'text/markdown');
                 }
-                await showAlert("Complete", "Batch processing complete!");
+                await window.showAlert("Complete", "Batch processing complete!");
 
             } else if (mode === "rename") {
                 for (const file of files) {
@@ -1032,7 +1040,7 @@
                         triggerDownload(safeName, output.value, 'text/markdown');
                     }
                 }
-                await showAlert("Complete", "Interactive processing complete!");
+                await window.showAlert("Complete", "Interactive processing complete!");
             }
         }
 
@@ -1114,7 +1122,7 @@
             const htmlPreview = marked.parse(markdownText);
             previewContent.innerHTML = htmlPreview;
             previewModal.style.display = 'flex';
-            hljs.highlightAll(); // Syntax highlighting
+            hljs.highlightAll();
         });
 
         btnClosePreview.onclick = () => {

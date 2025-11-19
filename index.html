@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rich Text to Markdown Converter</title>
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <link rel="icon" href="favicon.ico">
+    <style>
+        :root {
+            --bg-color: #f6f8fa;
+            --text-color: #24292f;
+            --input-bg: #ffffff;
+            --border-color: #d0d7de;
+            --accent-color: #1f883d;
+            --accent-hover: #1a7f37;
+            --btn-sec-bg: #f6f8fa;
+            --btn-sec-hover: #eff1f3;
+            --stats-bg: #f6f8fa;
+            --stats-text: #57606a;
+            --badge-bg: #eaeef2;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        header { text-align: center; margin-bottom: 20px; flex-shrink: 0; }
+        h1 { margin: 0; font-size: 1.5rem; }
+        p { color: var(--stats-text); font-size: 0.9rem; margin-top: 5px; }
+
+        .container {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            min-height: 0;
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            min-height: 32px;
+        }
+
+        label { font-weight: 600; font-size: 0.9rem; }
+
+        .text-box {
+            flex: 1;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px 6px 0 0;
+            padding: 15px;
+            font-size: 14px;
+            outline: none;
+            overflow-y: auto;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .text-box:focus {
+            border-color: #0969da;
+            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+            z-index: 1;
+        }
+
+        #input-div {
+            font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+            caret-color: #24292f;
+        }
+        
+        textarea.text-box {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            resize: none;
+        }
+
+        #input-div[placeholder]:empty:before {
+            content: attr(placeholder);
+            color: #6e7781;
+        }
+
+        .stats-bar {
+            background-color: var(--stats-bg);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            color: var(--stats-text);
+            text-align: right;
+            font-family: monospace;
+            flex-shrink: 0;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+            padding: 0 10px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .session-badge {
+            background-color: var(--badge-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            transition: 0.3s;
+            max-width: 90vw;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .attribution {
+            color: var(--stats-text);
+            font-size: 0.8rem;
+        }
+
+        .attribution a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .attribution a:hover { text-decoration: underline; color: var(--accent-color); }
+
+        button {
+            background-color: var(--btn-sec-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: 0.2s;
+            box-shadow: 0 1px 0 rgba(27, 31, 36, 0.04);
+        }
+
+        button:hover { 
+            background-color: var(--btn-sec-hover); 
+            border-color: #b9c0c6;
+        }
+        
+        button.primary {
+            background-color: var(--accent-color);
+            color: white;
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            box-shadow: 0 1px 0 rgba(27, 31, 36, 0.1);
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        button.primary:hover { background-color: var(--accent-hover); }
+
+        .header-actions { display: flex; gap: 8px; }
+
+        @media (max-width: 768px) {
+            body { height: auto; min-height: 100vh; }
+            .container { flex-direction: column; height: auto; }
+            .controls { flex-direction: row; padding: 20px 0; }
+            .text-box { min-height: 300px; flex: none; }
+            footer { margin-top: 40px; padding-bottom: 20px; }
+            .session-badge { font-size: 0.75rem; white-space: normal; text-align: center;}
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Rich Text to Markdown</h1>
+        <p>Paste formatted text (Word, Docs, Websites) to convert it.</p>
+    </header>
+
+    <div class="container">
+        <div class="panel">
+            <div class="label-row">
+                <label for="input-div">Rich Text Input</label>
+            </div>
+            <div id="input-div" class="text-box" contenteditable="true" placeholder="Paste your bold, italic, or header text here..."></div>
+            <div class="stats-bar" id="input-stats">0 words | 0 chars | 0 min read</div>
+        </div>
+
+        <div class="controls">
+            <button class="primary" id="convertBtn">Convert &rarr;</button>
+        </div>
+
+        <div class="panel">
+            <div class="label-row">
+                <label for="output">Markdown Output</label>
+                <div class="header-actions">
+                    <button id="downloadBtn">Download</button>
+                    <button id="copyBtn">Copy</button>
+                </div>
+            </div>
+            <textarea id="output" class="text-box" readonly placeholder="Markdown will appear here..."></textarea>
+            <div class="stats-bar" id="output-stats">0 words | 0 chars | 0 min read</div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="session-badge" id="global-total">
+            Community Stats: Loading...
+        </div>
+        <div class="attribution">
+            &copy; <span id="copyright-year"></span> Created by <a href="https://github.com/jackrschumacher" target="_blank">Jack Schumacher</a>. 
+            View source on <a href="https://github.com/jackrschumacher/rich-txt-to-md" target="_blank">GitHub</a>.
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCwtLS23NF7HoMRKlUusW_vq8I8L7o3GZc",
+            authDomain: "rich-text-to-md.firebaseapp.com",
+            databaseURL: "https://rich-text-to-md-default-rtdb.firebaseio.com",
+            projectId: "rich-text-to-md",
+            storageBucket: "rich-text-to-md.firebasestorage.app",
+            messagingSenderId: "447372975808",
+            appId: "1:447372975808:web:f1c92def8181de88251725"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const statsRef = ref(db, 'community_stats');
+        const globalBadge = document.getElementById('global-total');
+
+        onValue(statsRef, (snapshot) => {
+            const data = snapshot.val() || { words: 0, chars: 0, read_time: 0 };
+            
+            const words = (data.words || 0).toLocaleString();
+            const chars = (data.chars || 0).toLocaleString();
+            let timeDisplay = (data.read_time || 0) + " min";
+            if ((data.read_time || 0) > 60) {
+                timeDisplay = Math.floor((data.read_time || 0) / 60) + " hr " + ((data.read_time || 0) % 60) + " min";
+            }
+
+            globalBadge.innerText = `Community Total: ${words} words • ${chars} chars • ${timeDisplay} read time`;
+        });
+
+        window.incrementGlobalCount = function(w, c, t) {
+            runTransaction(statsRef, (currentStats) => {
+                if (!currentStats) {
+                    return { words: w, chars: c, read_time: t };
+                }
+                return {
+                    words: (currentStats.words || 0) + w,
+                    chars: (currentStats.chars || 0) + c,
+                    read_time: (currentStats.read_time || 0) + t
+                };
+            }).then(() => {
+                globalBadge.style.backgroundColor = "#d1fae5";
+                setTimeout(() => globalBadge.style.backgroundColor = "#eaeef2", 300);
+            });
+        }
+    </script>
+
+    <script>
+        // Set Copyright Year Automatically
+        document.getElementById('copyright-year').innerText = new Date().getFullYear();
+
+        var turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+
+        const inputDiv = document.getElementById('input-div');
+        const output = document.getElementById('output');
+        const convertBtn = document.getElementById('convertBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        let lastSubmittedText = null;
+
+        function getWordCount(text) {
+            return text.trim().split(/\s+/).filter(w => w.length > 0).length;
+        }
+        
+        function getReadTime(wordCount) {
+            if (wordCount <= 0) return 0;
+            return Math.ceil(wordCount / 225);
+        }
+
+        function updateStats(text, elementId) {
+            const charCount = text.length;
+            const wordCount = getWordCount(text);
+            const readTime = getReadTime(wordCount);
+            const timeString = readTime === 0 ? "0 min read" : `~${readTime} min read`;
+            document.getElementById(elementId).innerText = `${wordCount} words | ${charCount} chars | ${timeString}`;
+        }
+
+        function convert() {
+            const htmlContent = inputDiv.innerHTML;
+            const plainText = inputDiv.innerText; 
+            const markdown = turndownService.turndown(htmlContent);
+            output.value = markdown;
+            updateStats(plainText, 'input-stats');
+            updateStats(markdown, 'output-stats');
+        }
+
+        convertBtn.addEventListener('click', convert);
+        let timeout = null;
+        inputDiv.addEventListener('input', () => {
+            updateStats(inputDiv.innerText, 'input-stats');
+            clearTimeout(timeout);
+            timeout = setTimeout(convert, 500);
+        });
+
+        function processAction(text) {
+            if (!text) return false;
+            if (text !== lastSubmittedText) {
+                const w = getWordCount(text);
+                const c = text.length;
+                const t = getReadTime(w);
+                if(window.incrementGlobalCount) window.incrementGlobalCount(w, c, t);
+                lastSubmittedText = text;
+            }
+            return true;
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            const text = output.value;
+            if (!processAction(text)) return;
+            const blob = new Blob([text], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'converted.md';
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const text = output.value;
+            if (!processAction(text)) return;
+            output.select();
+            document.execCommand('copy');
+            const originalText = copyBtn.innerText;
+            copyBtn.innerText = "Copied!";
+            setTimeout(() => copyBtn.innerText = originalText, 2000);
+        });
+    </script>
+</body>
+</html>

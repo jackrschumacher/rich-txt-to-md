@@ -8,6 +8,10 @@
     <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
     <style>
         :root {
             /* LIGHT THEME */
@@ -42,7 +46,6 @@
             --btn-sec-hover: #30363d;
             --stats-bg: #161b22;
             --stats-text: #8b949e;
-            /* Fixed Visibility for Dark Mode Pill */
             --badge-bg: #30363d; 
             --badge-text: #f0f6fc;
             --shadow-color: rgba(0,0,0,0.5);
@@ -63,6 +66,7 @@
             height: 100vh;
             box-sizing: border-box;
             transition: background-color 0.3s, color 0.3s;
+            position: relative;
         }
 
         header { text-align: center; margin-bottom: 20px; flex-shrink: 0; }
@@ -160,11 +164,10 @@
             gap: 10px;
         }
 
-        /* UPDATED BADGE STYLES FOR VISIBILITY */
         .session-badge {
             background-color: var(--badge-bg);
             border: 1px solid var(--border-color);
-            color: var(--badge-text); /* Improved contrast variable */
+            color: var(--badge-text);
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 0.8rem;
@@ -195,7 +198,7 @@
         .attribution a:hover { text-decoration: underline; color: var(--accent-color); }
 
         /* BUTTON STYLES */
-        button, .file-btn {
+        button, .file-btn, .issue-link {
             background-color: var(--btn-sec-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
@@ -214,11 +217,25 @@
             line-height: normal;
         }
 
-        button:hover, .file-btn:hover { 
+        button:hover, .file-btn:hover, .issue-link:hover { 
             background-color: var(--btn-sec-hover); 
             border-color: #b9c0c6;
         }
         
+        /* ISSUE BUTTON SPECIFIC */
+        .issue-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            gap: 6px; /* Space between icon and text */
+        }
+        .issue-link svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
         button.primary {
             background-color: var(--accent-color);
             color: white;
@@ -251,7 +268,7 @@
             padding: 25px;
             border-radius: 8px;
             width: 90%;
-            max-width: 650px; /* Widened for 4 columns */
+            max-width: 650px; 
             box-shadow: 0 8px 24px rgba(0,0,0,0.2);
             text-align: center;
             border: 1px solid var(--border-color);
@@ -260,7 +277,7 @@
             overflow-y: auto;
         }
         
-        /* PREVIEW CONTENT STYLING */
+        /* PREVIEW STYLING */
         #previewContent {
             text-align: left;
             margin-bottom: 20px;
@@ -277,7 +294,7 @@
             margin-top: 24px; margin-bottom: 16px; font-weight: 600; line-height: 1.25;
             border-bottom: 1px solid var(--border-color); padding-bottom: .3em; color: var(--text-color);
         }
-        #previewContent code { background: var(--preview-code-bg); padding: 0.2em 0.4em; border-radius: 6px; font-family: monospace; font-size: 85%; }
+        #previewContent code { background: var(--preview-code-bg); padding: 0.2em 0.4em; border-radius: 6px; font-family: monospace; }
         #previewContent pre { background: var(--preview-code-bg); padding: 16px; overflow: auto; border-radius: 6px; margin-bottom: 16px; }
         #previewContent blockquote { border-left: 0.25em solid var(--border-color); padding: 0 1em; color: var(--stats-text); margin-bottom: 16px; }
         #previewContent img { max-width: 100%; }
@@ -285,11 +302,10 @@
         .modal-box h3 { margin-top: 0; color: var(--text-color); }
         .modal-box p { color: var(--stats-text); margin-bottom: 25px; }
 
-        /* CHART & TABLE STYLES */
+        /* STATS GRID */
         .stats-grid {
             display: grid;
-            /* 4 Columns for Words, Chars, Time, Generations */
-            grid-template-columns: repeat(4, 1fr); 
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); 
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -298,13 +314,25 @@
             padding: 10px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .stat-card .num { font-size: 1.1rem; font-weight: bold; color: var(--accent-color); display: block;}
-        .stat-card .label { font-size: 0.7rem; color: var(--stats-text); }
+        .stat-card .label { font-size: 0.7rem; color: var(--stats-text); margin-top: 2px; }
+        
+        /* Record Card Styling */
+        .record-split { display: flex; width: 100%; justify-content: space-around; align-items: center; }
+        .record-half { display: flex; flex-direction: column; align-items: center; }
+        .record-num { font-size: 1.1rem; font-weight: bold; color: var(--accent-color); }
+        .record-sub { font-size: 0.7rem; color: var(--stats-text); margin-top: 2px; }
+        .record-label { font-size: 0.7rem; font-weight: 600; margin-bottom: 2px; color: var(--text-color); }
 
+        /* Fixed Chart Container Height */
         .chart-container {
             position: relative;
             height: 250px;
+            min-height: 250px;
             width: 100%;
             margin-bottom: 15px;
         }
@@ -331,7 +359,6 @@
         .modal-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
         .modal-buttons button { padding: 10px 15px; font-size: 13px; flex: 1; justify-content: center; }
 
-        /* THEME TOGGLE BUTTON */
         #themeToggle {
             position: fixed; bottom: 20px; right: 20px;
             width: 45px; height: 45px; border-radius: 50%;
@@ -352,11 +379,19 @@
             .header-actions { flex-wrap: wrap; justify-content: flex-end;}
             .modal-buttons { flex-direction: column; }
             #themeToggle { bottom: 15px; right: 15px; width: 40px; height: 40px; }
-            .stats-grid { grid-template-columns: 1fr 1fr; } /* 2x2 grid on mobile */
+            .stats-grid { grid-template-columns: 1fr 1fr; } 
+            .issue-link { top: 10px; right: 10px; }
         }
     </style>
 </head>
 <body>
+
+    <a href="https://github.com/jackrschumacher/rich-txt-to-md/issues" target="_blank" class="issue-link" title="Report an issue">
+        <svg viewBox="0 0 24 24">
+            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+        </svg>
+        Issue?
+    </a>
 
     <header>
         <h1>Rich Text to Markdown</h1>
@@ -445,6 +480,23 @@
                     <span class="num" id="modalGens">0</span>
                     <span class="label">Conversions</span>
                 </div>
+                
+                <div class="stat-card" id="recordCard" style="grid-column: 1 / -1;">
+                    <div class="record-split">
+                        <div class="record-half">
+                            <span class="record-label">Max Words</span>
+                            <span class="record-num" id="recWordsNum">0</span>
+                            <span class="record-sub" id="recWordsDate">(-)</span>
+                        </div>
+                        <div style="width: 1px; height: 30px; background: var(--border-color);"></div>
+                        <div class="record-half">
+                            <span class="record-label">Max Chars</span>
+                            <span class="record-num" id="recCharsNum">0</span>
+                            <span class="record-sub" id="recCharsDate">(-)</span>
+                        </div>
+                    </div>
+                    <span class="label" style="margin-top: 8px;">Largest Single File (All Time)</span>
+                </div>
             </div>
 
             <div class="chart-container">
@@ -529,36 +581,89 @@
         const modalChars = document.getElementById('modalChars');
         const modalTime = document.getElementById('modalTime');
         const modalGens = document.getElementById('modalGens');
+        // Record elements
+        const recWordsNum = document.getElementById('recWordsNum');
+        const recWordsDate = document.getElementById('recWordsDate');
+        const recCharsNum = document.getElementById('recCharsNum');
+        const recCharsDate = document.getElementById('recCharsDate');
+        
         let statsChartInstance = null;
+        let currentRecordStats = { max_words: 0, max_chars: 0 };
+        let statsLoaded = false;
 
-        // 1. LISTENER FOR BADGE (Total)
+        // 1. LISTENER FOR BADGE & TOTALS
         onValue(child(statsRef, 'total'), (snapshot) => {
-            const data = snapshot.val() || { words: 0, chars: 0, read_time: 0, generations: 0 };
+            const data = snapshot.val() || {};
+            statsLoaded = true;
             
+            currentRecordStats.max_words = data.max_words || 0;
+            currentRecordStats.max_chars = data.max_chars || 0;
+
             const words = (data.words || 0).toLocaleString();
             const chars = (data.chars || 0).toLocaleString();
             const gens = (data.generations || 0).toLocaleString();
+            
             let timeDisplay = (data.read_time || 0) + " min";
             if ((data.read_time || 0) > 60) {
                 timeDisplay = Math.floor((data.read_time || 0) / 60) + " hr " + ((data.read_time || 0) % 60) + " min";
             }
 
-            // Updated Pill Text (Shortened slightly to fit)
             globalBadge.innerText = `Total: ${words} words • ${gens} conversions • ${timeDisplay} read time`;
             
-            // Update Modal Cards
             modalWords.innerText = words;
             modalChars.innerText = chars;
             modalTime.innerText = timeDisplay;
             modalGens.innerText = gens;
+
+            // Update Record Cards
+            const maxW = (data.max_words || 0).toLocaleString();
+            const maxWDate = data.max_words_date || "N/A";
+            const maxC = (data.max_chars || 0).toLocaleString();
+            const maxCDate = data.max_chars_date || "N/A";
+
+            recWordsNum.innerText = maxW;
+            recWordsDate.innerText = `(${maxWDate})`;
+            recCharsNum.innerText = maxC;
+            recCharsDate.innerText = `(${maxCDate})`;
         });
 
-        // 2. WRITE LOGIC (Includes Generations +1)
+        // 2. WRITE LOGIC
         window.incrementGlobalCount = function(w, c, t) {
             const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
             const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
             const updateFunc = (current) => {
+                if (!current) {
+                    return { 
+                        words: w, chars: c, read_time: t, generations: 1,
+                        max_words: w, max_words_date: todayStr,
+                        max_chars: c, max_chars_date: todayStr
+                    };
+                }
+                
+                let newMaxW = current.max_words || 0;
+                let newMaxWDate = current.max_words_date || todayStr;
+                if (w > newMaxW) { newMaxW = w; newMaxWDate = todayStr; }
+
+                let newMaxC = current.max_chars || 0;
+                let newMaxCDate = current.max_chars_date || todayStr;
+                if (c > newMaxC) { newMaxC = c; newMaxCDate = todayStr; }
+
+                return {
+                    words: (current.words || 0) + w,
+                    chars: (current.chars || 0) + c,
+                    read_time: (current.read_time || 0) + t,
+                    generations: (current.generations || 0) + 1,
+                    max_words: newMaxW,
+                    max_words_date: newMaxWDate,
+                    max_chars: newMaxC,
+                    max_chars_date: newMaxCDate
+                };
+            };
+
+            runTransaction(child(statsRef, 'total'), updateFunc);
+            runTransaction(child(statsRef, `monthly/${monthKey}`), (current) => {
                 if (!current) return { words: w, chars: c, read_time: t, generations: 1 };
                 return {
                     words: (current.words || 0) + w,
@@ -566,125 +671,154 @@
                     read_time: (current.read_time || 0) + t,
                     generations: (current.generations || 0) + 1
                 };
-            };
-
-            runTransaction(child(statsRef, 'total'), updateFunc);
-            runTransaction(child(statsRef, `monthly/${monthKey}`), updateFunc).then(() => {
+            }).then(() => {
                 globalBadge.style.backgroundColor = "#d1fae5";
-                setTimeout(() => globalBadge.style.backgroundColor = "#eaeef2", 300);
+                setTimeout(() => globalBadge.style.backgroundColor = "", 300);
             });
+        }
+
+        // CHECK RECORDS & CONGRATULATE
+        window.checkAndCongratulate = function(w, c) {
+            if (!statsLoaded) return;
+            
+            let msg = "";
+            const brokeWords = w > currentRecordStats.max_words;
+            const brokeChars = c > currentRecordStats.max_chars;
+
+            if (brokeWords && brokeChars) {
+                msg = `Incredible! You just set a new community record for BOTH Words (${w.toLocaleString()}) and Characters (${c.toLocaleString()})!`;
+            } else if (brokeWords) {
+                msg = `Amazing! You just set a new community record for Word Count: ${w.toLocaleString()} words!`;
+            } else if (brokeChars) {
+                msg = `Wow! You just set a new community record for Character Count: ${c.toLocaleString()} chars!`;
+            }
+
+            if (msg) {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                showAlert("🎉 NEW RECORD!", msg);
+            }
         }
 
         // 3. RENDER CHART & TABLE
         globalBadge.addEventListener('click', () => {
             statsModal.style.display = 'flex';
             monthlyTableBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            
+            // WAIT FOR MODAL TRANSITION (Fix for 0-height chart issue)
+            setTimeout(() => {
+                get(child(statsRef, 'monthly')).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const monthlyData = snapshot.val();
+                        const sortedMonths = Object.keys(monthlyData).sort(); 
+                        
+                        const labels = [];
+                        const wordsData = [];
+                        const charsData = [];
+                        const timeData = [];
+                        const gensData = [];
 
-            get(child(statsRef, 'monthly')).then((snapshot) => {
-                if (snapshot.exists()) {
-                    const monthlyData = snapshot.val();
-                    const sortedMonths = Object.keys(monthlyData).sort(); 
-                    
-                    const labels = [];
-                    const wordsData = [];
-                    const charsData = [];
-                    const timeData = [];
+                        let tableHtml = '';
+                        [...sortedMonths].reverse().forEach(key => {
+                            const m = monthlyData[key];
+                            const rTime = m.read_time || 0;
+                            tableHtml += `<tr>
+                                <td>${key}</td>
+                                <td>${(m.words || 0).toLocaleString()}</td>
+                                <td>${(m.chars || 0).toLocaleString()}</td>
+                                <td>${rTime.toLocaleString()} m</td>
+                                <td>${(m.generations || 0).toLocaleString()}</td>
+                            </tr>`;
+                        });
+                        monthlyTableBody.innerHTML = tableHtml;
 
-                    let tableHtml = '';
-                    // Loop reversed for Table (Newest first)
-                    [...sortedMonths].reverse().forEach(key => {
-                        const m = monthlyData[key];
-                        const rTime = m.read_time || 0;
-                        tableHtml += `<tr>
-                            <td>${key}</td>
-                            <td>${(m.words || 0).toLocaleString()}</td>
-                            <td>${(m.chars || 0).toLocaleString()}</td>
-                            <td>${rTime.toLocaleString()} m</td>
-                            <td>${(m.generations || 0).toLocaleString()}</td>
-                        </tr>`;
-                    });
-                    monthlyTableBody.innerHTML = tableHtml;
+                        sortedMonths.forEach(key => {
+                            labels.push(key);
+                            wordsData.push(monthlyData[key].words || 0);
+                            charsData.push(monthlyData[key].chars || 0);
+                            timeData.push(monthlyData[key].read_time || 0);
+                            gensData.push(monthlyData[key].generations || 0);
+                        });
 
-                    // Prepare Chart Data
-                    sortedMonths.forEach(key => {
-                        labels.push(key);
-                        wordsData.push(monthlyData[key].words || 0);
-                        charsData.push(monthlyData[key].chars || 0);
-                        timeData.push(monthlyData[key].read_time || 0);
-                    });
+                        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                        const textColor = isDark ? '#c9d1d9' : '#57606a';
+                        const gridColor = isDark ? '#30363d' : '#e1e4e8';
 
-                    // Get Current Theme Colors
-                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                    const textColor = isDark ? '#c9d1d9' : '#57606a';
-                    const gridColor = isDark ? '#30363d' : '#e1e4e8';
+                        const ctx = document.getElementById('statsChart').getContext('2d');
+                        if (statsChartInstance) statsChartInstance.destroy();
 
-                    // Render Chart
-                    const ctx = document.getElementById('statsChart').getContext('2d');
-                    if (statsChartInstance) statsChartInstance.destroy();
-
-                    statsChartInstance = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [
-                                {
-                                    label: 'Words',
-                                    data: wordsData,
-                                    backgroundColor: 'rgba(31, 136, 61, 0.7)', /* Green */
-                                    yAxisID: 'y',
-                                },
-                                {
-                                    label: 'Characters',
-                                    data: charsData,
-                                    backgroundColor: 'rgba(210, 153, 34, 0.7)', /* Orange */
-                                    yAxisID: 'y',
-                                },
-                                {
-                                    label: 'Time to Read',
-                                    data: timeData,
-                                    borderColor: '#0969da', /* Blue */
-                                    backgroundColor: 'rgba(9, 105, 218, 0.1)',
-                                    type: 'line',
-                                    yAxisID: 'y1',
-                                    tension: 0.3
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                x: { ticks: { color: textColor }, grid: { color: gridColor } },
-                                y: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'left',
-                                    title: { display: true, text: 'Volume', color: textColor },
-                                    ticks: { color: textColor },
-                                    grid: { color: gridColor }
-                                },
-                                y1: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'right',
-                                    title: { display: true, text: 'Minutes', color: '#0969da' },
-                                    grid: { drawOnChartArea: false },
-                                    ticks: { color: '#0969da' }
-                                }
+                        statsChartInstance = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [
+                                    {
+                                        label: 'Words',
+                                        data: wordsData,
+                                        backgroundColor: 'rgba(31, 136, 61, 0.7)',
+                                        yAxisID: 'y',
+                                    },
+                                    {
+                                        label: 'Characters',
+                                        data: charsData,
+                                        backgroundColor: 'rgba(210, 153, 34, 0.7)',
+                                        yAxisID: 'y',
+                                    },
+                                    {
+                                        label: 'Time to Read',
+                                        data: timeData,
+                                        borderColor: '#0969da',
+                                        backgroundColor: 'rgba(9, 105, 218, 0.1)',
+                                        type: 'line',
+                                        yAxisID: 'y1',
+                                        tension: 0.3
+                                    },
+                                    {
+                                        label: 'Conversions',
+                                        data: gensData,
+                                        borderColor: '#8a2be2',
+                                        backgroundColor: 'rgba(138, 43, 226, 0.1)',
+                                        type: 'line',
+                                        yAxisID: 'y1',
+                                        tension: 0.3
+                                    }
+                                ]
                             },
-                            plugins: {
-                                legend: { labels: { color: textColor } }
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                                    y: {
+                                        type: 'linear',
+                                        display: true,
+                                        position: 'left',
+                                        title: { display: true, text: 'Volume', color: textColor },
+                                        ticks: { color: textColor },
+                                        grid: { color: gridColor }
+                                    },
+                                    y1: {
+                                        type: 'linear',
+                                        display: true,
+                                        position: 'right',
+                                        title: { display: true, text: 'Mins / Count', color: '#0969da' },
+                                        grid: { drawOnChartArea: false },
+                                        ticks: { color: '#0969da' }
+                                    }
+                                },
+                                plugins: {
+                                    legend: { labels: { color: textColor } }
+                                }
                             }
-                        }
-                    });
+                        });
 
-                } else {
-                    monthlyTableBody.innerHTML = '<tr><td colspan="5">No history yet.</td></tr>';
-                }
-            }).catch((e) => {
-                console.error(e);
-                monthlyTableBody.innerHTML = '<tr><td colspan="5">Error loading data.</td></tr>';
-            });
+                    } else {
+                        monthlyTableBody.innerHTML = '<tr><td colspan="5">No history yet.</td></tr>';
+                    }
+                }).catch((e) => {
+                    console.error(e);
+                    monthlyTableBody.innerHTML = '<tr><td colspan="5">Error loading data.</td></tr>';
+                });
+            }, 100); // Slight delay to ensure modal is visible for chart rendering
         });
 
         btnCloseStats.onclick = () => { statsModal.style.display = 'none'; }
@@ -939,6 +1073,9 @@
                 const w = getWordCount(text);
                 const c = text.length;
                 const t = getReadTime(w);
+                
+                if (window.checkAndCongratulate) window.checkAndCongratulate(w, c);
+                
                 if(window.incrementGlobalCount) window.incrementGlobalCount(w, c, t);
                 lastSubmittedText = text;
             }
@@ -970,12 +1107,14 @@
             }
         });
 
+        // PREVIEW HANDLER
         previewBtn.addEventListener('click', () => {
             const markdownText = output.value;
             if (!markdownText) return;
             const htmlPreview = marked.parse(markdownText);
             previewContent.innerHTML = htmlPreview;
             previewModal.style.display = 'flex';
+            hljs.highlightAll(); // Syntax highlighting
         });
 
         btnClosePreview.onclick = () => {

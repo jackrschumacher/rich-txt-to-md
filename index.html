@@ -6,6 +6,7 @@
     <title>Rich Text to Markdown Converter</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             /* LIGHT THEME (Default) */
@@ -163,6 +164,11 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            cursor: pointer;
+        }
+        .session-badge:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
         }
 
         .attribution {
@@ -234,76 +240,74 @@
             padding: 25px;
             border-radius: 8px;
             width: 90%;
-            max-width: 500px;
+            max-width: 600px; /* Widened slightly for new chart data */
             box-shadow: 0 8px 24px rgba(0,0,0,0.2);
             text-align: center;
             border: 1px solid var(--border-color);
             transition: background-color 0.3s;
+            max-height: 85vh;
+            overflow-y: auto;
         }
 
         .modal-box h3 { margin-top: 0; color: var(--text-color); }
         .modal-box p { color: var(--stats-text); margin-bottom: 25px; }
 
-        /* Filename Input in Modal */
-        .modal-input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: var(--bg-color);
-            color: var(--text-color);
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        .modal-input:focus {
-            border-color: #0969da;
-            outline: none;
-        }
-
-        .modal-buttons {
-            display: flex;
+        /* CHART & TABLE STYLES */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--bg-color);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        .stat-card .num { font-size: 1.2rem; font-weight: bold; color: var(--accent-color); display: block;}
+        .stat-card .label { font-size: 0.75rem; color: var(--stats-text); }
+
+        .chart-container {
+            position: relative;
+            height: 250px; /* Taller for better visibility */
+            width: 100%;
+            margin-bottom: 15px;
         }
 
-        .modal-buttons button {
-            padding: 10px 15px;
-            font-size: 13px;
-            flex: 1;
-            justify-content: center; 
+        .monthly-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            color: var(--text-color);
         }
+        .monthly-table th { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); color: var(--stats-text);}
+        .monthly-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
+        .monthly-table tr:last-child td { border-bottom: none; }
+
+        .modal-input {
+            width: 100%; padding: 10px; margin-bottom: 20px;
+            border: 1px solid var(--border-color); border-radius: 6px;
+            background: var(--bg-color); color: var(--text-color);
+            font-size: 14px; box-sizing: border-box;
+        }
+        .modal-input:focus { border-color: #0969da; outline: none; }
+
+        .modal-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .modal-buttons button { padding: 10px 15px; font-size: 13px; flex: 1; justify-content: center; }
 
         /* THEME TOGGLE BUTTON */
         #themeToggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background-color: var(--btn-sec-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transition: 0.3s;
-            z-index: 999;
-            padding: 0;
+            position: fixed; bottom: 20px; right: 20px;
+            width: 45px; height: 45px; border-radius: 50%;
+            background-color: var(--btn-sec-bg); border: 1px solid var(--border-color);
+            color: var(--text-color); display: flex; align-items: center;
+            justify-content: center; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s; z-index: 999; padding: 0;
         }
-        #themeToggle:hover {
-            transform: scale(1.1);
-            background-color: var(--btn-sec-hover);
-        }
-        #themeToggle svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
+        #themeToggle:hover { transform: scale(1.1); background-color: var(--btn-sec-hover); }
+        #themeToggle svg { width: 20px; height: 20px; fill: currentColor; }
 
         @media (max-width: 768px) {
             body { height: auto; min-height: 100vh; }
@@ -311,10 +315,10 @@
             .controls { flex-direction: row; padding: 20px 0; }
             .text-box { min-height: 300px; flex: none; }
             footer { margin-top: 40px; padding-bottom: 20px; }
-            .session-badge { font-size: 0.75rem; white-space: normal; text-align: center;}
             .header-actions { flex-wrap: wrap; justify-content: flex-end;}
             .modal-buttons { flex-direction: column; }
             #themeToggle { bottom: 15px; right: 15px; width: 40px; height: 40px; }
+            .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -357,7 +361,7 @@
     </div>
 
     <footer>
-        <div class="session-badge" id="global-total">
+        <div class="session-badge" id="global-total" title="Click to view charts">
             Community Stats: Loading...
         </div>
         <div class="attribution">
@@ -374,6 +378,46 @@
             <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
         </svg>
     </button>
+
+    <div id="statsModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Community Statistics</h3>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="num" id="modalWords">0</span>
+                    <span class="label">Words</span>
+                </div>
+                <div class="stat-card">
+                    <span class="num" id="modalChars">0</span>
+                    <span class="label">Chars</span>
+                </div>
+                <div class="stat-card">
+                    <span class="num" id="modalTime">0</span>
+                    <span class="label">Time to Read</span>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="statsChart"></canvas>
+            </div>
+
+            <p style="text-align: left; margin-bottom: 5px; font-weight: 600; color: var(--text-color);">History by Month</p>
+            <div style="max-height: 200px; overflow-y: auto;">
+                <table class="monthly-table">
+                    <thead>
+                        <tr><th>Month</th><th>Words</th><th>Chars</th><th>Time to Read</th></tr>
+                    </thead>
+                    <tbody id="monthlyTableBody">
+                        <tr><td colspan="4">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button id="btnCloseStats">Close</button>
+            </div>
+        </div>
+    </div>
 
     <div id="multiFileModal" class="modal-overlay">
         <div class="modal-box">
@@ -411,7 +455,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, get, child } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCwtLS23NF7HoMRKlUusW_vq8I8L7o3GZc",
@@ -425,10 +469,20 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const statsRef = ref(db, 'community_stats');
+        const statsRef = ref(db, 'community_stats'); 
         const globalBadge = document.getElementById('global-total');
 
-        onValue(statsRef, (snapshot) => {
+        // STATS UI ELEMENTS
+        const statsModal = document.getElementById('statsModal');
+        const btnCloseStats = document.getElementById('btnCloseStats');
+        const monthlyTableBody = document.getElementById('monthlyTableBody');
+        const modalWords = document.getElementById('modalWords');
+        const modalChars = document.getElementById('modalChars');
+        const modalTime = document.getElementById('modalTime');
+        let statsChartInstance = null;
+
+        // 1. LISTENER FOR BADGE (Total)
+        onValue(child(statsRef, 'total'), (snapshot) => {
             const data = snapshot.val() || { words: 0, chars: 0, read_time: 0 };
             
             const words = (data.words || 0).toLocaleString();
@@ -439,23 +493,150 @@
             }
 
             globalBadge.innerText = `Community Total: ${words} words • ${chars} chars • ${timeDisplay} read time`;
+            modalWords.innerText = words;
+            modalChars.innerText = chars;
+            modalTime.innerText = timeDisplay;
         });
 
+        // 2. WRITE LOGIC
         window.incrementGlobalCount = function(w, c, t) {
-            runTransaction(statsRef, (currentStats) => {
-                if (!currentStats) {
-                    return { words: w, chars: c, read_time: t };
-                }
+            const now = new Date();
+            const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            runTransaction(child(statsRef, 'total'), (current) => {
+                if (!current) return { words: w, chars: c, read_time: t };
                 return {
-                    words: (currentStats.words || 0) + w,
-                    chars: (currentStats.chars || 0) + c,
-                    read_time: (currentStats.read_time || 0) + t
+                    words: (current.words || 0) + w,
+                    chars: (current.chars || 0) + c,
+                    read_time: (current.read_time || 0) + t
+                };
+            });
+
+            runTransaction(child(statsRef, `monthly/${monthKey}`), (current) => {
+                if (!current) return { words: w, chars: c, read_time: t };
+                return {
+                    words: (current.words || 0) + w,
+                    chars: (current.chars || 0) + c,
+                    read_time: (current.read_time || 0) + t
                 };
             }).then(() => {
                 globalBadge.style.backgroundColor = "#d1fae5";
                 setTimeout(() => globalBadge.style.backgroundColor = "#eaeef2", 300);
             });
         }
+
+        // 3. RENDER CHART & TABLE
+        globalBadge.addEventListener('click', () => {
+            statsModal.style.display = 'flex';
+            monthlyTableBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+
+            get(child(statsRef, 'monthly')).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const monthlyData = snapshot.val();
+                    const sortedMonths = Object.keys(monthlyData).sort(); 
+                    
+                    const labels = [];
+                    const wordsData = [];
+                    const charsData = [];
+                    const timeData = [];
+
+                    let tableHtml = '';
+                    // Loop reversed for Table (Newest first)
+                    [...sortedMonths].reverse().forEach(key => {
+                        const m = monthlyData[key];
+                        const rTime = m.read_time || 0;
+                        tableHtml += `<tr>
+                            <td>${key}</td>
+                            <td>${(m.words || 0).toLocaleString()}</td>
+                            <td>${(m.chars || 0).toLocaleString()}</td>
+                            <td>${rTime.toLocaleString()}</td>
+                        </tr>`;
+                    });
+                    monthlyTableBody.innerHTML = tableHtml;
+
+                    // Prepare Chart Data
+                    sortedMonths.forEach(key => {
+                        labels.push(key);
+                        wordsData.push(monthlyData[key].words || 0);
+                        charsData.push(monthlyData[key].chars || 0);
+                        timeData.push(monthlyData[key].read_time || 0);
+                    });
+
+                    // Get Current Theme Colors
+                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    const textColor = isDark ? '#c9d1d9' : '#57606a';
+                    const gridColor = isDark ? '#30363d' : '#e1e4e8';
+
+                    // Render Chart
+                    const ctx = document.getElementById('statsChart').getContext('2d');
+                    if (statsChartInstance) statsChartInstance.destroy();
+
+                    statsChartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Words',
+                                    data: wordsData,
+                                    backgroundColor: 'rgba(31, 136, 61, 0.7)', /* Green */
+                                    yAxisID: 'y',
+                                },
+                                {
+                                    label: 'Characters',
+                                    data: charsData,
+                                    backgroundColor: 'rgba(210, 153, 34, 0.7)', /* Orange/Yellow */
+                                    yAxisID: 'y',
+                                },
+                                {
+                                    label: 'Time to Read',
+                                    data: timeData,
+                                    borderColor: '#0969da', /* Blue */
+                                    backgroundColor: 'rgba(9, 105, 218, 0.1)',
+                                    type: 'line',
+                                    yAxisID: 'y1',
+                                    tension: 0.3
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    title: { display: true, text: 'Volume', color: textColor },
+                                    ticks: { color: textColor },
+                                    grid: { color: gridColor }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    title: { display: true, text: 'Minutes', color: '#0969da' },
+                                    grid: { drawOnChartArea: false },
+                                    ticks: { color: '#0969da' }
+                                }
+                            },
+                            plugins: {
+                                legend: { labels: { color: textColor } }
+                            }
+                        }
+                    });
+
+                } else {
+                    monthlyTableBody.innerHTML = '<tr><td colspan="4">No history yet.</td></tr>';
+                }
+            }).catch((e) => {
+                console.error(e);
+                monthlyTableBody.innerHTML = '<tr><td colspan="4">Error loading data.</td></tr>';
+            });
+        });
+
+        btnCloseStats.onclick = () => { statsModal.style.display = 'none'; }
     </script>
 
     <script>
@@ -479,7 +660,6 @@
         const filenameModal = document.getElementById('filenameModal');
         const alertModal = document.getElementById('alertModal');
         
-        // Modal Elements
         const btnCombine = document.getElementById('btnCombine');
         const btnBatch = document.getElementById('btnBatch');
         const btnRename = document.getElementById('btnRename');
@@ -489,7 +669,6 @@
         const btnSaveFile = document.getElementById('btnSaveFile');
         const btnCancelFile = document.getElementById('btnCancelFile');
 
-        // Alert Elements
         const alertTitle = document.getElementById('alertTitle');
         const alertMessage = document.getElementById('alertMessage');
         const btnAlertOk = document.getElementById('btnAlertOk');
@@ -500,7 +679,6 @@
         let modalResolve = null;
         let alertResolve = null;
 
-        // THEME TOGGLE LOGIC
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             if (theme === 'dark') {
@@ -526,7 +704,6 @@
             const currentTheme = document.documentElement.getAttribute('data-theme');
             setTheme(currentTheme === 'light' ? 'dark' : 'light');
         });
-
 
         function getWordCount(text) {
             return text.trim().split(/\s+/).filter(w => w.length > 0).length;
@@ -563,11 +740,7 @@
                     if (file.name.toLowerCase().endsWith('.html') || file.name.toLowerCase().endsWith('.htm')) {
                         processedContent = content;
                     } else {
-                        processedContent = content
-                            .replace(/&/g, "&amp;")
-                            .replace(/</g, "&lt;")
-                            .replace(/>/g, "&gt;")
-                            .replace(/\n/g, "<br>");
+                        processedContent = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
                     }
                     resolve(processedContent);
                 };
@@ -576,7 +749,7 @@
             });
         }
 
-        // FILENAME MODAL LOGIC
+        // MODAL LOGIC
         btnSaveFile.onclick = function() {
             if (modalResolve) {
                 modalResolve(filenameInput.value.trim());
@@ -584,7 +757,6 @@
                 modalResolve = null;
             }
         };
-
         btnCancelFile.onclick = function() {
             if (modalResolve) {
                 modalResolve(null);
@@ -592,7 +764,6 @@
                 modalResolve = null;
             }
         };
-
         filenameInput.onkeydown = function(e) {
             if(e.key === 'Enter') btnSaveFile.click();
         };
@@ -606,7 +777,6 @@
             });
         }
 
-        // ALERT MODAL LOGIC
         btnAlertOk.onclick = function() {
             if (alertResolve) {
                 alertResolve();
@@ -637,7 +807,6 @@
 
         async function handleFiles(files, mode) {
             if (mode === "combine") {
-                // COMBINE
                 currentFilename = "Combined Uploads.md";
                 const filePromises = files.map(file => readFileAsText(file));
                 const contents = await Promise.all(filePromises);
@@ -645,31 +814,25 @@
                 convert();
             
             } else if (mode === "batch") {
-                // BATCH (Uses Custom Alert now)
                 await showAlert("Download Permission", "Note: You may need to grant permission for your browser to download multiple files.");
-
                 for (const file of files) {
                     const content = await readFileAsText(file);
                     inputDiv.innerHTML = content;
                     convert();
                     await new Promise(r => setTimeout(r, 300));
-
                     let filename = file.name.replace(/\.[^/.]+$/, "") + ".md";
                     triggerDownload(filename, output.value, 'text/markdown');
                 }
                 await showAlert("Complete", "Batch processing complete!");
 
             } else if (mode === "rename") {
-                // RENAME
                 for (const file of files) {
                     const content = await readFileAsText(file);
                     inputDiv.innerHTML = content;
                     convert();
                     await new Promise(r => setTimeout(r, 100)); 
-
                     const defaultName = file.name.replace(/\.[^/.]+$/, "") + ".md";
                     const filename = await askFileName(defaultName);
-                    
                     if (filename) {
                         let safeName = filename;
                         if (!safeName.toLowerCase().endsWith('.md')) safeName += ".md";
@@ -683,13 +846,11 @@
         fileUpload.addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
-
             if (files.length === 1) {
                 handleFiles(files, 'combine');
             } else {
                 multiFileMessage.innerText = `You selected ${files.length} files. How would you like to handle them?`;
                 multiFileModal.style.display = 'flex';
-
                 btnCombine.onclick = function() {
                     multiFileModal.style.display = 'none';
                     handleFiles(files, 'combine');
@@ -728,10 +889,8 @@
         downloadBtn.addEventListener('click', async () => {
             const text = output.value;
             if (!text) return;
-            
             const defaultName = currentFilename.replace(/\.html$/, ".md");
             const filename = await askFileName(defaultName);
-            
             if (filename) {
                 let safeName = filename;
                 if (!safeName.toLowerCase().endsWith('.md')) safeName += ".md";
@@ -742,22 +901,9 @@
         downloadHtmlBtn.addEventListener('click', async () => {
             const content = inputDiv.innerHTML;
             if (!content) return;
-
-            const htmlFile = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Exported Content</title>
-<style>body{font-family:sans-serif;line-height:1.6;padding:20px;max-width:800px;margin:0 auto;}</style>
-</head>
-<body>
-${content}
-</body>
-</html>`;
-
+            const htmlFile = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Exported Content</title><style>body{font-family:sans-serif;line-height:1.6;padding:20px;max-width:800px;margin:0 auto;}</style></head><body>${content}</body></html>`;
             const defaultName = currentFilename.replace(/\.md$/, ".html");
             const filename = await askFileName(defaultName);
-
             if (filename) {
                 let safeName = filename;
                 if (!safeName.toLowerCase().endsWith('.html')) safeName += ".html";

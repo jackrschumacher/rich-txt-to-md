@@ -190,11 +190,9 @@
             transition: 0.2s;
             box-shadow: 0 1px 0 rgba(27, 31, 36, 0.04);
             text-decoration: none;
-            
             display: inline-flex;
             align-items: center;
             justify-content: center; 
-            
             font-family: inherit;
             line-height: normal;
         }
@@ -401,6 +399,16 @@
         </div>
     </div>
 
+    <div id="alertModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="alertTitle">Notice</h3>
+            <p id="alertMessage">Message goes here.</p>
+            <div class="modal-buttons">
+                <button id="btnAlertOk" class="primary">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
         import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
@@ -469,6 +477,7 @@
         // Modals
         const multiFileModal = document.getElementById('multiFileModal');
         const filenameModal = document.getElementById('filenameModal');
+        const alertModal = document.getElementById('alertModal');
         
         // Modal Elements
         const btnCombine = document.getElementById('btnCombine');
@@ -480,11 +489,16 @@
         const btnSaveFile = document.getElementById('btnSaveFile');
         const btnCancelFile = document.getElementById('btnCancelFile');
 
+        // Alert Elements
+        const alertTitle = document.getElementById('alertTitle');
+        const alertMessage = document.getElementById('alertMessage');
+        const btnAlertOk = document.getElementById('btnAlertOk');
+
         let lastSubmittedText = null;
         let currentFilename = "Rich text to markdown convert.md";
         
-        // Resolver for modal promise
         let modalResolve = null;
+        let alertResolve = null;
 
         // THEME TOGGLE LOGIC
         function setTheme(theme) {
@@ -496,11 +510,9 @@
                 sunIcon.style.display = 'none';
                 moonIcon.style.display = 'block';
             }
-            // Save choice so it persists on reload
             localStorage.setItem('theme', theme);
         }
 
-        // Initialize Theme: Check storage first, then system preference
         const savedTheme = localStorage.getItem('theme');
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
@@ -510,7 +522,6 @@
             setTheme(systemPrefersDark ? 'dark' : 'light');
         }
 
-        // Toggle Listener
         themeToggle.addEventListener('click', () => {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             setTheme(currentTheme === 'light' ? 'dark' : 'light');
@@ -565,7 +576,7 @@
             });
         }
 
-        // MODAL PROMISE LOGIC
+        // FILENAME MODAL LOGIC
         btnSaveFile.onclick = function() {
             if (modalResolve) {
                 modalResolve(filenameInput.value.trim());
@@ -595,6 +606,24 @@
             });
         }
 
+        // ALERT MODAL LOGIC
+        btnAlertOk.onclick = function() {
+            if (alertResolve) {
+                alertResolve();
+                alertModal.style.display = 'none';
+                alertResolve = null;
+            }
+        };
+
+        function showAlert(title, message) {
+            return new Promise((resolve) => {
+                alertTitle.innerText = title;
+                alertMessage.innerText = message;
+                alertModal.style.display = 'flex';
+                alertResolve = resolve;
+            });
+        }
+
         function triggerDownload(filename, content, mimeType) {
             processAction(content); 
             const blob = new Blob([content], { type: mimeType });
@@ -608,7 +637,7 @@
 
         async function handleFiles(files, mode) {
             if (mode === "combine") {
-                // COMBINE MODE
+                // COMBINE
                 currentFilename = "Combined Uploads.md";
                 const filePromises = files.map(file => readFileAsText(file));
                 const contents = await Promise.all(filePromises);
@@ -616,10 +645,9 @@
                 convert();
             
             } else if (mode === "batch") {
-                // Add warning here
-                alert("Note: You may need to grant permission for your browser to download multiple files.");
+                // BATCH (Uses Custom Alert now)
+                await showAlert("Download Permission", "Note: You may need to grant permission for your browser to download multiple files.");
 
-                // BATCH MODE
                 for (const file of files) {
                     const content = await readFileAsText(file);
                     inputDiv.innerHTML = content;
@@ -629,16 +657,14 @@
                     let filename = file.name.replace(/\.[^/.]+$/, "") + ".md";
                     triggerDownload(filename, output.value, 'text/markdown');
                 }
-                alert("Batch processing complete!");
+                await showAlert("Complete", "Batch processing complete!");
 
             } else if (mode === "rename") {
-                // RENAME MODE
+                // RENAME
                 for (const file of files) {
                     const content = await readFileAsText(file);
                     inputDiv.innerHTML = content;
                     convert();
-                    
-                    // Render UI
                     await new Promise(r => setTimeout(r, 100)); 
 
                     const defaultName = file.name.replace(/\.[^/.]+$/, "") + ".md";
@@ -650,7 +676,7 @@
                         triggerDownload(safeName, output.value, 'text/markdown');
                     }
                 }
-                alert("Interactive processing complete!");
+                await showAlert("Complete", "Interactive processing complete!");
             }
         }
 

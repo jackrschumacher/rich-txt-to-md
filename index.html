@@ -313,7 +313,10 @@
         const copyBtn = document.getElementById('copyBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const fileUpload = document.getElementById('fileUpload');
+        
         let lastSubmittedText = null;
+        // Variable to store the current filename (defaults to generic)
+        let currentFilename = "Rich text to markdown convert.md";
 
         function getWordCount(text) {
             return text.trim().split(/\s+/).filter(w => w.length > 0).length;
@@ -346,6 +349,10 @@
             const file = e.target.files[0];
             if (!file) return;
 
+            // Store the uploaded filename (strip extension and add .md)
+            const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+            currentFilename = nameWithoutExt + ".md";
+
             const reader = new FileReader();
             reader.onload = function(event) {
                 const content = event.target.result;
@@ -355,7 +362,6 @@
                     inputDiv.innerHTML = content;
                 } else {
                     // FIX: Escape HTML characters but Replace Newlines with <br>
-                    // This ensures Turndown sees the line breaks correctly
                     const safeText = content
                         .replace(/&/g, "&amp;")
                         .replace(/</g, "&lt;")
@@ -395,14 +401,17 @@
             const text = output.value;
             if (!processAction(text)) return;
 
-            // Default filename
-            let filename = "Rich text to markdown convert.md";
+            // Start with the stored filename (either default or from upload)
+            let filename = currentFilename;
 
             // Ask user if they want to name it
             const wantToName = confirm("Would you like to name the file?");
             
             if (wantToName) {
-                const customName = prompt("Enter file name:", "converted");
+                // Pre-fill the prompt with the current name (minus extension for easy editing)
+                let defaultNameInPrompt = filename.replace(/\.md$/, "");
+                const customName = prompt("Enter file name:", defaultNameInPrompt);
+                
                 if (customName && customName.trim().length > 0) {
                     filename = customName.trim();
                     // Ensure .md extension

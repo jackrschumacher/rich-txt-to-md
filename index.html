@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
     <style>
         :root {
+            /* LIGHT THEME (Default) */
             --bg-color: #f6f8fa;
             --text-color: #24292f;
             --input-bg: #ffffff;
@@ -19,6 +20,25 @@
             --stats-bg: #f6f8fa;
             --stats-text: #57606a;
             --badge-bg: #eaeef2;
+            --shadow-color: rgba(0,0,0,0.05);
+            --modal-overlay: rgba(0, 0, 0, 0.5);
+        }
+
+        /* DARK THEME OVERRIDES */
+        [data-theme="dark"] {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --input-bg: #161b22;
+            --border-color: #30363d;
+            --accent-color: #238636;
+            --accent-hover: #2ea043;
+            --btn-sec-bg: #21262d;
+            --btn-sec-hover: #30363d;
+            --stats-bg: #161b22;
+            --stats-text: #8b949e;
+            --badge-bg: #21262d;
+            --shadow-color: rgba(0,0,0,0.5);
+            --modal-overlay: rgba(255, 255, 255, 0.1);
         }
 
         body {
@@ -31,6 +51,7 @@
             flex-direction: column;
             height: 100vh;
             box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         header { text-align: center; margin-bottom: 20px; flex-shrink: 0; }
@@ -71,7 +92,8 @@
             font-size: 14px;
             outline: none;
             overflow-y: auto;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 2px var(--shadow-color);
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         .text-box:focus {
@@ -82,7 +104,7 @@
 
         #input-div {
             font-family: "Segoe UI", Helvetica, Arial, sans-serif;
-            caret-color: #24292f;
+            caret-color: var(--text-color);
         }
         
         textarea.text-box {
@@ -92,7 +114,7 @@
 
         #input-div[placeholder]:empty:before {
             content: attr(placeholder);
-            color: #6e7781;
+            color: var(--stats-text);
         }
 
         .stats-bar {
@@ -106,6 +128,7 @@
             text-align: right;
             font-family: monospace;
             flex-shrink: 0;
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         .controls {
@@ -167,8 +190,11 @@
             transition: 0.2s;
             box-shadow: 0 1px 0 rgba(27, 31, 36, 0.04);
             text-decoration: none;
+            
             display: inline-flex;
             align-items: center;
+            justify-content: center; 
+            
             font-family: inherit;
             line-height: normal;
         }
@@ -190,9 +216,95 @@
 
         .header-actions { display: flex; gap: 8px; }
 
-        /* Hide the actual file input */
-        input[type="file"] {
-            display: none;
+        input[type="file"] { display: none; }
+
+        /* CUSTOM MODAL STYLES */
+        .modal-overlay {
+            display: none; 
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--modal-overlay);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-box {
+            background: var(--input-bg);
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s;
+        }
+
+        .modal-box h3 { margin-top: 0; color: var(--text-color); }
+        .modal-box p { color: var(--stats-text); margin-bottom: 25px; }
+
+        /* Filename Input in Modal */
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .modal-input:focus {
+            border-color: #0969da;
+            outline: none;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .modal-buttons button {
+            padding: 10px 15px;
+            font-size: 13px;
+            flex: 1;
+            justify-content: center; 
+        }
+
+        /* THEME TOGGLE BUTTON */
+        #themeToggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--btn-sec-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: 0.3s;
+            z-index: 999;
+            padding: 0;
+        }
+        #themeToggle:hover {
+            transform: scale(1.1);
+            background-color: var(--btn-sec-hover);
+        }
+        #themeToggle svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
         }
 
         @media (max-width: 768px) {
@@ -202,6 +314,9 @@
             .text-box { min-height: 300px; flex: none; }
             footer { margin-top: 40px; padding-bottom: 20px; }
             .session-badge { font-size: 0.75rem; white-space: normal; text-align: center;}
+            .header-actions { flex-wrap: wrap; justify-content: flex-end;}
+            .modal-buttons { flex-direction: column; }
+            #themeToggle { bottom: 15px; right: 15px; width: 40px; height: 40px; }
         }
     </style>
 </head>
@@ -217,8 +332,8 @@
             <div class="label-row">
                 <label for="input-div">Rich Text Input</label>
                 <label for="fileUpload" class="file-btn">
-                    Upload Text/HTML
-                    <input type="file" id="fileUpload" accept=".txt,.html,.md,.htm">
+                    Upload Files
+                    <input type="file" id="fileUpload" accept=".txt,.html,.md,.htm" multiple>
                 </label>
             </div>
             <div id="input-div" class="text-box" contenteditable="true" placeholder="Paste your bold, italic, or header text here..."></div>
@@ -233,7 +348,8 @@
             <div class="label-row">
                 <label for="output">Markdown Output</label>
                 <div class="header-actions">
-                    <button id="downloadBtn">Download</button>
+                    <button id="downloadBtn">Download MD</button>
+                    <button id="downloadHtmlBtn">Download HTML</button>
                     <button id="copyBtn">Copy</button>
                 </div>
             </div>
@@ -251,6 +367,39 @@
             View source on <a href="https://github.com/jackrschumacher/rich-txt-to-md" target="_blank">GitHub</a>.
         </div>
     </footer>
+
+    <button id="themeToggle" title="Toggle Theme">
+        <svg id="sunIcon" viewBox="0 0 24 24" style="display: none;">
+            <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
+        </svg>
+        <svg id="moonIcon" viewBox="0 0 24 24">
+            <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
+        </svg>
+    </button>
+
+    <div id="multiFileModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Multiple Files Detected</h3>
+            <p id="multiFileMessage">How would you like to handle these files?</p>
+            <div class="modal-buttons">
+                <button id="btnCombine" class="primary">Combine All</button>
+                <button id="btnBatch">Keep Original Names</button>
+                <button id="btnRename">Rename Each</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="filenameModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Save File</h3>
+            <p>Confirm or rename your file before downloading.</p>
+            <input type="text" id="filenameInput" class="modal-input" placeholder="Enter filename...">
+            <div class="modal-buttons">
+                <button id="btnSaveFile" class="primary">Download</button>
+                <button id="btnCancelFile">Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
@@ -302,7 +451,6 @@
     </script>
 
     <script>
-        // Set Copyright Year Automatically
         document.getElementById('copyright-year').innerText = new Date().getFullYear();
 
         var turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
@@ -312,11 +460,62 @@
         const convertBtn = document.getElementById('convertBtn');
         const copyBtn = document.getElementById('copyBtn');
         const downloadBtn = document.getElementById('downloadBtn');
+        const downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
         const fileUpload = document.getElementById('fileUpload');
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
         
+        // Modals
+        const multiFileModal = document.getElementById('multiFileModal');
+        const filenameModal = document.getElementById('filenameModal');
+        
+        // Modal Elements
+        const btnCombine = document.getElementById('btnCombine');
+        const btnBatch = document.getElementById('btnBatch');
+        const btnRename = document.getElementById('btnRename');
+        const multiFileMessage = document.getElementById('multiFileMessage');
+        
+        const filenameInput = document.getElementById('filenameInput');
+        const btnSaveFile = document.getElementById('btnSaveFile');
+        const btnCancelFile = document.getElementById('btnCancelFile');
+
         let lastSubmittedText = null;
-        // Variable to store the current filename (defaults to generic)
         let currentFilename = "Rich text to markdown convert.md";
+        
+        // Resolver for modal promise
+        let modalResolve = null;
+
+        // THEME TOGGLE LOGIC
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            } else {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            }
+            // Save choice so it persists on reload
+            localStorage.setItem('theme', theme);
+        }
+
+        // Initialize Theme: Check storage first, then system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else {
+            setTheme(systemPrefersDark ? 'dark' : 'light');
+        }
+
+        // Toggle Listener
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            setTheme(currentTheme === 'light' ? 'dark' : 'light');
+        });
+
 
         function getWordCount(text) {
             return text.trim().split(/\s+/).filter(w => w.length > 0).length;
@@ -344,36 +543,140 @@
             updateStats(markdown, 'output-stats');
         }
 
-        // FILE UPLOAD HANDLER
-        fileUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const content = event.target.result;
+                    let processedContent = "";
+                    if (file.name.toLowerCase().endsWith('.html') || file.name.toLowerCase().endsWith('.htm')) {
+                        processedContent = content;
+                    } else {
+                        processedContent = content
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;")
+                            .replace(/\n/g, "<br>");
+                    }
+                    resolve(processedContent);
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
 
-            // Store the uploaded filename (strip extension and add .md)
-            const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
-            currentFilename = nameWithoutExt + ".md";
+        // MODAL PROMISE LOGIC
+        btnSaveFile.onclick = function() {
+            if (modalResolve) {
+                modalResolve(filenameInput.value.trim());
+                filenameModal.style.display = 'none';
+                modalResolve = null;
+            }
+        };
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const content = event.target.result;
-                
-                // If HTML file, inject as HTML so tags are preserved
-                if (file.name.toLowerCase().endsWith('.html') || file.name.toLowerCase().endsWith('.htm')) {
+        btnCancelFile.onclick = function() {
+            if (modalResolve) {
+                modalResolve(null);
+                filenameModal.style.display = 'none';
+                modalResolve = null;
+            }
+        };
+
+        filenameInput.onkeydown = function(e) {
+            if(e.key === 'Enter') btnSaveFile.click();
+        };
+
+        function askFileName(defaultName) {
+            return new Promise((resolve) => {
+                filenameInput.value = defaultName;
+                filenameModal.style.display = 'flex';
+                filenameInput.focus();
+                modalResolve = resolve;
+            });
+        }
+
+        function triggerDownload(filename, content, mimeType) {
+            processAction(content); 
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; 
+            a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+
+        async function handleFiles(files, mode) {
+            if (mode === "combine") {
+                // COMBINE MODE
+                currentFilename = "Combined Uploads.md";
+                const filePromises = files.map(file => readFileAsText(file));
+                const contents = await Promise.all(filePromises);
+                inputDiv.innerHTML = contents.join('<br><br><hr><br><br>');
+                convert();
+            
+            } else if (mode === "batch") {
+                // Add warning here
+                alert("Note: You may need to grant permission for your browser to download multiple files.");
+
+                // BATCH MODE
+                for (const file of files) {
+                    const content = await readFileAsText(file);
                     inputDiv.innerHTML = content;
-                } else {
-                    // FIX: Escape HTML characters but Replace Newlines with <br>
-                    const safeText = content
-                        .replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;")
-                        .replace(/\n/g, "<br>");
-                    
-                    inputDiv.innerHTML = safeText; 
+                    convert();
+                    await new Promise(r => setTimeout(r, 300));
+
+                    let filename = file.name.replace(/\.[^/.]+$/, "") + ".md";
+                    triggerDownload(filename, output.value, 'text/markdown');
                 }
-                
-                convert(); // Auto convert after load
-            };
-            reader.readAsText(file);
+                alert("Batch processing complete!");
+
+            } else if (mode === "rename") {
+                // RENAME MODE
+                for (const file of files) {
+                    const content = await readFileAsText(file);
+                    inputDiv.innerHTML = content;
+                    convert();
+                    
+                    // Render UI
+                    await new Promise(r => setTimeout(r, 100)); 
+
+                    const defaultName = file.name.replace(/\.[^/.]+$/, "") + ".md";
+                    const filename = await askFileName(defaultName);
+                    
+                    if (filename) {
+                        let safeName = filename;
+                        if (!safeName.toLowerCase().endsWith('.md')) safeName += ".md";
+                        triggerDownload(safeName, output.value, 'text/markdown');
+                    }
+                }
+                alert("Interactive processing complete!");
+            }
+        }
+
+        fileUpload.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            if (files.length === 1) {
+                handleFiles(files, 'combine');
+            } else {
+                multiFileMessage.innerText = `You selected ${files.length} files. How would you like to handle them?`;
+                multiFileModal.style.display = 'flex';
+
+                btnCombine.onclick = function() {
+                    multiFileModal.style.display = 'none';
+                    handleFiles(files, 'combine');
+                };
+                btnBatch.onclick = function() {
+                    multiFileModal.style.display = 'none';
+                    handleFiles(files, 'batch');
+                };
+                btnRename.onclick = function() {
+                    multiFileModal.style.display = 'none';
+                    handleFiles(files, 'rename');
+                };
+            }
         });
 
         convertBtn.addEventListener('click', convert);
@@ -396,38 +699,44 @@
             return true;
         }
 
-        // DOWNLOAD HANDLER
-        downloadBtn.addEventListener('click', () => {
+        downloadBtn.addEventListener('click', async () => {
             const text = output.value;
-            if (!processAction(text)) return;
-
-            // Start with the stored filename (either default or from upload)
-            let filename = currentFilename;
-
-            // Ask user if they want to name it
-            const wantToName = confirm("Would you like to name the file?");
+            if (!text) return;
             
-            if (wantToName) {
-                // Pre-fill the prompt with the current name (minus extension for easy editing)
-                let defaultNameInPrompt = filename.replace(/\.md$/, "");
-                const customName = prompt("Enter file name:", defaultNameInPrompt);
-                
-                if (customName && customName.trim().length > 0) {
-                    filename = customName.trim();
-                    // Ensure .md extension
-                    if (!filename.toLowerCase().endsWith('.md')) {
-                        filename += ".md";
-                    }
-                }
+            const defaultName = currentFilename.replace(/\.html$/, ".md");
+            const filename = await askFileName(defaultName);
+            
+            if (filename) {
+                let safeName = filename;
+                if (!safeName.toLowerCase().endsWith('.md')) safeName += ".md";
+                triggerDownload(safeName, text, 'text/markdown');
             }
+        });
 
-            const blob = new Blob([text], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; 
-            a.download = filename;
-            document.body.appendChild(a); a.click();
-            document.body.removeChild(a); URL.revokeObjectURL(url);
+        downloadHtmlBtn.addEventListener('click', async () => {
+            const content = inputDiv.innerHTML;
+            if (!content) return;
+
+            const htmlFile = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Exported Content</title>
+<style>body{font-family:sans-serif;line-height:1.6;padding:20px;max-width:800px;margin:0 auto;}</style>
+</head>
+<body>
+${content}
+</body>
+</html>`;
+
+            const defaultName = currentFilename.replace(/\.md$/, ".html");
+            const filename = await askFileName(defaultName);
+
+            if (filename) {
+                let safeName = filename;
+                if (!safeName.toLowerCase().endsWith('.html')) safeName += ".html";
+                triggerDownload(safeName, htmlFile, 'text/html');
+            }
         });
 
         copyBtn.addEventListener('click', () => {

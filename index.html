@@ -7,8 +7,11 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
     <style>
         :root {
             /* LIGHT THEME */
@@ -219,13 +222,16 @@
             border-color: #b9c0c6;
         }
         
-        /* ISSUE BUTTON SPECIFIC */
+        /* ISSUE BUTTON (Bottom Right) */
         .issue-link {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 10;
+            position: fixed;
+            bottom: 20px;
+            right: 80px; /* Sits to the left of the 45px toggle */
+            z-index: 999;
             gap: 6px;
+            height: 45px; /* Match toggle height */
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Match toggle shadow */
         }
         .issue-link svg {
             width: 16px;
@@ -274,6 +280,7 @@
             overflow-y: auto;
         }
         
+        /* PREVIEW STYLING */
         #previewContent {
             text-align: left;
             margin-bottom: 20px;
@@ -373,9 +380,17 @@
             footer { margin-top: 40px; padding-bottom: 20px; }
             .header-actions { flex-wrap: wrap; justify-content: flex-end;}
             .modal-buttons { flex-direction: column; }
+            
             #themeToggle { bottom: 15px; right: 15px; width: 40px; height: 40px; }
+            
+            .issue-link { 
+                bottom: 15px; 
+                right: 70px; /* Adjust for mobile spacing */
+                height: 40px; 
+                padding: 0 12px;
+            }
+            
             .stats-grid { grid-template-columns: 1fr 1fr; } 
-            .issue-link { top: 10px; right: 10px; }
         }
     </style>
 </head>

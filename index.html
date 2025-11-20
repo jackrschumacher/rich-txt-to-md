@@ -87,15 +87,18 @@
             min-width: 0;
         }
 
+        /* FIXED: Added wrapping and gap to prevent cramping */
         .label-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
             min-height: 32px;
+            flex-wrap: wrap; /* Allows items to drop to next line */
+            gap: 10px;       /* Spacing between wrapped items */
         }
 
-        label { font-weight: 600; font-size: 0.9rem; }
+        label { font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
 
         .text-box {
             flex: 1;
@@ -215,6 +218,7 @@
             justify-content: center; 
             font-family: inherit;
             line-height: normal;
+            white-space: nowrap; /* Prevent button text wrapping */
         }
 
         button:hover, .file-btn:hover, .issue-link:hover { 
@@ -222,7 +226,7 @@
             border-color: #b9c0c6;
         }
         
-        /* ISSUE BUTTON (Bottom Right) */
+        /* ISSUE BUTTON SPECIFIC */
         .issue-link {
             position: fixed;
             bottom: 20px;
@@ -231,7 +235,7 @@
             gap: 6px;
             height: 45px; /* Match toggle height */
             box-sizing: border-box;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Match toggle shadow */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
         }
         .issue-link svg {
             width: 16px;
@@ -249,7 +253,13 @@
         }
         button.primary:hover { background-color: var(--accent-hover); }
 
-        .header-actions { display: flex; gap: 8px; }
+        /* FIXED: Allow buttons to wrap nicely */
+        .header-actions { 
+            display: flex; 
+            gap: 8px; 
+            flex-wrap: wrap; 
+            justify-content: flex-end;
+        }
 
         input[type="file"] { display: none; }
 
@@ -378,16 +388,18 @@
             .controls { flex-direction: row; padding: 20px 0; }
             .text-box { min-height: 300px; flex: none; }
             footer { margin-top: 40px; padding-bottom: 20px; }
+            /* Mobile: Buttons wrap nicely */
             .header-actions { flex-wrap: wrap; justify-content: flex-end;}
             .modal-buttons { flex-direction: column; }
             
             #themeToggle { bottom: 15px; right: 15px; width: 40px; height: 40px; }
             
+            /* Mobile Issue Button: Stops floating, centers */
             .issue-link { 
-                bottom: 15px; 
-                right: 70px; /* Adjust for mobile spacing */
-                height: 40px; 
-                padding: 0 12px;
+                position: relative; 
+                top: auto; right: auto; bottom: auto; 
+                margin: 0 auto 15px auto; 
+                width: fit-content;
             }
             
             .stats-grid { grid-template-columns: 1fr 1fr; } 

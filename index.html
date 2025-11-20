@@ -87,18 +87,15 @@
             min-width: 0;
         }
 
-        /* FIXED: Added wrapping and gap to prevent cramping */
         .label-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
             min-height: 32px;
-            flex-wrap: wrap; /* Allows items to drop to next line */
-            gap: 10px;       /* Spacing between wrapped items */
         }
 
-        label { font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
+        label { font-weight: 600; font-size: 0.9rem; }
 
         .text-box {
             flex: 1;
@@ -125,6 +122,17 @@
             caret-color: var(--text-color);
         }
         
+        /* FIX: Force transparent background for pasted content */
+        #input-div * {
+            background-color: transparent !important;
+            color: inherit !important; /* Inherit text color from theme */
+        }
+        /* Keep links visible */
+        #input-div a {
+            color: #58a6ff !important;
+            text-decoration: underline;
+        }
+
         textarea.text-box {
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             resize: none;
@@ -218,7 +226,6 @@
             justify-content: center; 
             font-family: inherit;
             line-height: normal;
-            white-space: nowrap; /* Prevent button text wrapping */
         }
 
         button:hover, .file-btn:hover, .issue-link:hover { 
@@ -253,7 +260,6 @@
         }
         button.primary:hover { background-color: var(--accent-hover); }
 
-        /* FIXED: Allow buttons to wrap nicely */
         .header-actions { 
             display: flex; 
             gap: 8px; 
@@ -388,18 +394,16 @@
             .controls { flex-direction: row; padding: 20px 0; }
             .text-box { min-height: 300px; flex: none; }
             footer { margin-top: 40px; padding-bottom: 20px; }
-            /* Mobile: Buttons wrap nicely */
             .header-actions { flex-wrap: wrap; justify-content: flex-end;}
             .modal-buttons { flex-direction: column; }
             
             #themeToggle { bottom: 15px; right: 15px; width: 40px; height: 40px; }
             
-            /* Mobile Issue Button: Stops floating, centers */
             .issue-link { 
-                position: relative; 
-                top: auto; right: auto; bottom: auto; 
-                margin: 0 auto 15px auto; 
-                width: fit-content;
+                bottom: 15px; 
+                right: 70px; /* Adjust for mobile spacing */
+                height: 40px; 
+                padding: 0 12px;
             }
             
             .stats-grid { grid-template-columns: 1fr 1fr; } 
@@ -424,10 +428,13 @@
         <div class="panel">
             <div class="label-row">
                 <label for="input-div">Rich Text Input</label>
-                <label for="fileUpload" class="file-btn">
-                    Upload Files
-                    <input type="file" id="fileUpload" accept=".txt,.html,.md,.htm" multiple>
-                </label>
+                <div class="header-actions" style="justify-content: flex-start;">
+                    <button id="clearBtn">Clear</button>
+                    <label for="fileUpload" class="file-btn">
+                        Upload Files
+                        <input type="file" id="fileUpload" accept=".txt,.html,.md,.htm" multiple>
+                    </label>
+                </div>
             </div>
             <div id="input-div" class="text-box" contenteditable="true" placeholder="Paste your bold, italic, or header text here..."></div>
             <div class="stats-bar" id="input-stats">0 words | 0 chars | 0 min read</div>
@@ -900,6 +907,9 @@
         const alertMessage = document.getElementById('alertMessage');
         const btnAlertOk = document.getElementById('btnAlertOk');
 
+        // CLEAR BUTTON
+        const clearBtn = document.getElementById('clearBtn');
+
         let lastSubmittedText = null;
         let currentFilename = "Rich text to markdown convert.md";
         
@@ -985,6 +995,15 @@
                 reader.readAsText(file);
             });
         }
+
+        // CLEAR BUTTON LOGIC
+        clearBtn.addEventListener('click', () => {
+            inputDiv.innerHTML = '';
+            output.value = '';
+            updateStats('', 'input-stats');
+            updateStats('', 'output-stats');
+            currentFilename = "Rich text to markdown convert.md";
+        });
 
         // MODAL LOGIC
         btnSaveFile.onclick = function() {

@@ -322,10 +322,11 @@
         .modal-box h3 { margin-top: 0; color: var(--text-color); }
         .modal-box p { color: var(--stats-text); margin-bottom: 25px; }
 
-        /* STATS GRID */
+        /* STATS GRID - FIXED */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); 
+            /* FORCE 4 COLUMNS ON DESKTOP TO PREVENT SHIFTING */
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -406,6 +407,7 @@
                 width: fit-content;
             }
             
+            /* Mobile Grid: Switch to 2 columns */
             .stats-grid { grid-template-columns: 1fr 1fr; } 
         }
     </style>

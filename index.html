@@ -322,11 +322,10 @@
         .modal-box h3 { margin-top: 0; color: var(--text-color); }
         .modal-box p { color: var(--stats-text); margin-bottom: 25px; }
 
-        /* STATS GRID - FIXED */
+        /* STATS GRID */
         .stats-grid {
             display: grid;
-            /* FORCE 4 COLUMNS ON DESKTOP TO PREVENT SHIFTING */
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); 
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -407,7 +406,6 @@
                 width: fit-content;
             }
             
-            /* Mobile Grid: Switch to 2 columns */
             .stats-grid { grid-template-columns: 1fr 1fr; } 
         }
     </style>
@@ -1014,7 +1012,8 @@
                                                 // Same line -> add space
                                                 text += ' ';
                                             }
-                                            text += item.str;
+                                            // ESCAPE HTML CHARACTERS
+                                            text += item.str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                                             lastY = item.transform[5];
                                         }
                                         return text;

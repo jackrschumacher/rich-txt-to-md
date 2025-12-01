@@ -123,7 +123,6 @@
             caret-color: var(--text-color);
         }
         
-        /* FIX: Force transparent background for pasted content */
         #input-div * {
             background-color: transparent !important;
             color: inherit !important; 
@@ -322,10 +321,10 @@
         .modal-box h3 { margin-top: 0; color: var(--text-color); }
         .modal-box p { color: var(--stats-text); margin-bottom: 25px; }
 
-        /* STATS GRID */
+        /* STATS GRID - FIXED */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); 
+            grid-template-columns: repeat(4, 1fr); /* FIXED: Forces 4 equal columns */
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -399,13 +398,17 @@
             
             #themeToggle { bottom: 15px; right: 15px; width: 40px; height: 40px; }
             
+            /* Mobile Issue Button: Stacked above theme toggle */
             .issue-link { 
-                position: relative; 
-                top: auto; right: auto; bottom: auto; 
-                margin: 0 auto 15px auto; 
-                width: fit-content;
+                position: fixed; 
+                bottom: 70px; 
+                right: 15px; 
+                top: auto;
+                gap: 6px;
+                height: 45px; 
             }
             
+            /* Mobile Grid: Switch to 2 columns */
             .stats-grid { grid-template-columns: 1fr 1fr; } 
         }
     </style>
@@ -428,7 +431,7 @@
         <div class="panel">
             <div class="label-row">
                 <label for="input-div">Rich Text Input</label>
-                <div class="header-actions" style="justify-content: flex-start;">
+                <div class="header-actions">
                     <button id="clearBtn">Clear</button>
                     <label for="fileUpload" class="file-btn">
                         Upload Files

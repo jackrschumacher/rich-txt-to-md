@@ -588,6 +588,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+        // IMPORT AUTH SDK
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
         import { getDatabase, ref, onValue, runTransaction, get, child } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -601,9 +603,13 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        // ADDED: Initialize Auth and Sign In
+        
+        // --- AUTH INITIALIZATION ---
         const auth = getAuth(app);
-        signInAnonymously(auth).catch((error) => console.error("Auth Failed:", error));
+        signInAnonymously(auth).catch((e) => {
+            console.error("Auth failed:", e);
+            document.getElementById('global-total').innerText = "Stats: Auth Failed";
+        });
 
         const db = getDatabase(app);
         const statsRef = ref(db, 'community_stats'); 
@@ -633,46 +639,54 @@
         }
 
         // 1. LISTENER FOR BADGE & TOTALS
-        onValue(child(statsRef, 'total'), (snapshot) => {
-            const data = snapshot.val() || {};
-            statsLoaded = true;
-            
-            currentRecordStats.max_words = data.max_words || 0;
-            currentRecordStats.max_chars = data.max_chars || 0;
+        // We wrap this listener to ensure it only activates when we have a user
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                onValue(child(statsRef, 'total'), (snapshot) => {
+                    const data = snapshot.val() || {};
+                    statsLoaded = true;
+                    
+                    currentRecordStats.max_words = data.max_words || 0;
+                    currentRecordStats.max_chars = data.max_chars || 0;
 
-            const words = (data.words || 0).toLocaleString();
-            const chars = (data.chars || 0).toLocaleString();
-            const gens = (data.generations || 0).toLocaleString();
-            
-            let timeDisplay = (data.read_time || 0) + " min";
-            if ((data.read_time || 0) > 60) {
-                timeDisplay = Math.floor((data.read_time || 0) / 60) + " hr " + ((data.read_time || 0) % 60) + " min";
+                    const words = (data.words || 0).toLocaleString();
+                    const chars = (data.chars || 0).toLocaleString();
+                    const gens = (data.generations || 0).toLocaleString();
+                    
+                    let timeDisplay = (data.read_time || 0) + " min";
+                    if ((data.read_time || 0) > 60) {
+                        timeDisplay = Math.floor((data.read_time || 0) / 60) + " hr " + ((data.read_time || 0) % 60) + " min";
+                    }
+
+                    globalBadge.innerText = `Total: ${words} words • ${gens} conversions • ${timeDisplay} read time`;
+                    
+                    modalWords.innerText = words;
+                    modalChars.innerText = chars;
+                    modalTime.innerText = timeDisplay;
+                    modalGens.innerText = gens;
+
+                    // Update Record Cards
+                    const maxW = (data.max_words || 0).toLocaleString();
+                    const maxWDate = data.max_words_date || "N/A";
+                    const maxC = (data.max_chars || 0).toLocaleString();
+                    const maxCDate = data.max_chars_date || "N/A";
+
+                    recWordsNum.innerText = maxW;
+                    recWordsDate.innerText = `(${maxWDate})`;
+                    recCharsNum.innerText = maxC;
+                    recCharsDate.innerText = `(${maxCDate})`;
+                }, (error) => {
+                    console.error("Firebase Read Error:", error);
+                    globalBadge.innerText = "Stats: Offline";
+                });
             }
-
-            globalBadge.innerText = `Total: ${words} words • ${gens} conversions • ${timeDisplay} read time`;
-            
-            modalWords.innerText = words;
-            modalChars.innerText = chars;
-            modalTime.innerText = timeDisplay;
-            modalGens.innerText = gens;
-
-            // Update Record Cards
-            const maxW = (data.max_words || 0).toLocaleString();
-            const maxWDate = data.max_words_date || "N/A";
-            const maxC = (data.max_chars || 0).toLocaleString();
-            const maxCDate = data.max_chars_date || "N/A";
-
-            recWordsNum.innerText = maxW;
-            recWordsDate.innerText = `(${maxWDate})`;
-            recCharsNum.innerText = maxC;
-            recCharsDate.innerText = `(${maxCDate})`;
-        }, (error) => {
-             console.error("Firebase Read Error:", error);
-             globalBadge.innerText = "Stats: Offline";
         });
 
         // 2. WRITE LOGIC
         window.incrementGlobalCount = function(w, c, t) {
+            // Check if user is authenticated
+            if (!auth.currentUser) return;
+
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
             const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -753,6 +767,9 @@
 
         // 3. RENDER CHART & TABLE
         globalBadge.addEventListener('click', () => {
+            // Only allow click if auth is ready
+            if (!auth.currentUser) return;
+
             statsModal.style.display = 'flex';
             monthlyTableBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             
